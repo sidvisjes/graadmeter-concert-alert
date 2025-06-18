@@ -34,9 +34,9 @@ def send_email(subject, content):
     msg.set_content(content)
 
     try:
-        with smtplib.SMTP("smtp.mailgun.org", 587) as smtp:
-            smtp.starttls()
-            smtp.login(smtp_user, smtp_password)
+        with smtplib.SMTP_SSL("smtp.mailgun.org", 465) as smtp:
+    smtp.login(smtp_user, smtp_password)
+    smtp.send_message(msg)
             smtp.send_message(msg)
             print("✅ E-mail verzonden!")
     except Exception as e:
