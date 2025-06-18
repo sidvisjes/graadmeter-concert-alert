@@ -22,7 +22,7 @@ jobs:
 
       - name: Run mail script
         env:
-  SMTP_USER: ${{ secrets.SMTP_USER }}
-  SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
-  MAIL_TO: ${{ secrets.MAIL_TO }}
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
         run: python main.py
