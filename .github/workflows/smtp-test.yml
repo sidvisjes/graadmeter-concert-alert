@@ -1,0 +1,23 @@
+name: Test Mailgun SMTP
+
+on:
+  workflow_dispatch:  # Handmatig starten via de Actions tab
+
+jobs:
+  test_smtp:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.x
+
+      - name: Run SMTP test script
+        env:
+          SMTP_USER: ${{ secrets.SMTP_USER }}
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python smtp_test.py
