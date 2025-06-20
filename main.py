@@ -1,22 +1,37 @@
 import smtplib
 import os
+import requests
+from bs4 import BeautifulSoup
 from email.message import EmailMessage
 
 def get_artists():
-    # Simpele voorbeeldlijst — in de echte versie zou je deze scrapen van de Pinguin Graadmeter
-    return [
-        "Arctic Monkeys",
-        "Radiohead",
-        "Fontaines D.C.",
-        "Wet Leg",
-    ]
+    url = "https://pinguinradio.com/graadmeter"
+    try:
+        response = requests.get(url, timeout=10)
+        response.raise_for_status()
+    except Exception as e:
+        print(f"⚠️ Kon de Graadmeter-pagina niet laden: {e}")
+        return ["(Kon de artiestenlijst niet ophalen)"]
+
+    soup = BeautifulSoup(response.text, "html.parser")
+    artist_elements = soup.select(".song__title")
+
+    if not artist_elements:
+        return ["(Geen artiesten gevonden op de pagina)"]
+
+    artists = [el.get_text(strip=True) for el in artist_elements]
+    return artists
 
 def format_email_content(artists):
-    lines = ["🎸 Concertalert – Pinguin Graadmeter 🎶", "", "De volgende artiesten staan deze week in de lijst:"]
+    lines = [
+        "🎸 Concertalert – Pinguin Graadmeter 🎶",
+        "",
+        "De volgende artiesten staan deze week in de lijst:"
+    ]
     for artist in artists:
         lines.append(f"- {artist}")
     lines.append("")
-    lines.append("Concertinformatie is gebaseerd op Bandsintown. Meer info: https://www.bandsintown.com/")
+    lines.append("Concertinformatie is gebaseerd op Bandsintown: https://www.bandsintown.com/")
     return "\n".join(lines)
 
 def send_email(subject, content):
@@ -34,9 +49,9 @@ def send_email(subject, content):
     msg.set_content(content)
 
     try:
-        with smtplib.SMTP_SSL("smtp.mailgun.org", 465) as smtp:
-    smtp.login(smtp_user, smtp_password)
-    smtp.send_message(msg)
+        with smtplib.SMTP("smtp.mailgun.org", 587) as smtp:
+            smtp.starttls()
+            smtp.login(smtp_user, smtp_password)
             smtp.send_message(msg)
             print("✅ E-mail verzonden!")
     except Exception as e:
