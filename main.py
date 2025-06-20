@@ -9,16 +9,17 @@ BANDSINTOWN_APP_ID = "graadmeter-concert-alert"
 
 def get_artists():
     url = "https://pinguinradio.com/graadmeter"
-    response = requests.get(url)
+    response = requests.get(url, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
     artist_elements = soup.select(".field-content a")
     artists = [a.text.strip() for a in artist_elements if a.text.strip()]
+    print(f"🎤 Artiesten gevonden: {artists}")
     return list(set(artists))  # Uniek maken
 
 def get_concerts(artist):
     url = f"https://rest.bandsintown.com/artists/{quote(artist)}/events?app_id={BANDSINTOWN_APP_ID}"
     try:
-        response = requests.get(url)
+        response = requests.get(url, timeout=10)
         if response.status_code != 200:
             print(f"❌ Fout bij ophalen concerten voor {artist}: status {response.status_code}")
             return []
@@ -26,8 +27,7 @@ def get_concerts(artist):
         if not data:
             print(f"⚠️ Geen events voor: {artist}")
             return []
-        # Filter op Nederland
-        filtered = [e for e in data if e.get("venue", {}).get("country") == "Netherlands"]
+        filtered = [e for e in data if e.get("venue") and e["venue"].get("country") == "Netherlands"]
         if not filtered:
             print(f"⚠️ Geen events in Nederland voor: {artist}")
         else:
@@ -43,7 +43,8 @@ def format_email_content(concerts):
 
     lines = ["🎸 Concertalert – Pinguin Graadmeter 🎶", ""]
     for concert in concerts:
-        lines.append(f"- {concert['artist']} – {concert['venue']}, {concert['city']} op {concert['datetime'][:10]} ({concert.get('url', '')})")
+        venue = concert.get("venue", {})
+        lines.append(f"- {concert['artist']} – {venue.get('name', '')}, {venue.get('city', '')} op {concert['datetime'][:10]} ({concert.get('url', '')})")
     return "\n".join(lines)
 
 def send_email(subject, content):
@@ -70,14 +71,17 @@ def send_email(subject, content):
         print("❌ Fout bij verzenden e-mail:", e)
 
 def main():
+    # Voor test: gebruik hieronder een vaste artiest
+    # artists = ["The Claw Boys Claw"]
     artists = get_artists()
     all_concerts = []
     for artist in artists:
         concerts = get_concerts(artist)
         for concert in concerts:
-            concert["artist"] = artist  # Zorg dat artiestnaam ook in concert staat
+            concert["artist"] = artist
         all_concerts.extend(concerts)
 
+    print(f"Totale concerten gevonden: {len(all_concerts)}")
     content = format_email_content(all_concerts)
     send_email("🎶 Wekelijkse concertmail – Graadmeter", content)
 
