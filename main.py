@@ -4,63 +4,41 @@ import requests
 from bs4 import BeautifulSoup
 from email.message import EmailMessage
 
+BANDSINTOWN_APP_ID = "graadmeter-concert-alert"
+
 def get_artists():
     url = "https://pinguinradio.com/graadmeter"
-    try:
-        response = requests.get(url, timeout=10)
-        response.raise_for_status()
-    except Exception as e:
-        print(f"⚠️ Kon de Graadmeter-pagina niet laden: {e}")
-        return ["(Kon de artiestenlijst niet ophalen)"]
-
+    response = requests.get(url)
     soup = BeautifulSoup(response.text, "html.parser")
-    artist_elements = soup.select(".song__title")
 
-    if not artist_elements:
-        return ["(Geen artiesten gevonden op de pagina)"]
+    artist_elements = soup.select(".field-content a")
+    artists = [a.text.strip() for a in artist_elements if a.text.strip()]
+    return list(set(artists))  # Uniek maken
 
-    artists = [el.get_text(strip=True) for el in artist_elements]
-    return artists
-
-def format_email_content(artists):
-    lines = [
-        "🎸 Concertalert – Pinguin Graadmeter 🎶",
-        "",
-        "De volgende artiesten staan deze week in de lijst:"
-    ]
-    for artist in artists:
-        lines.append(f"- {artist}")
-    lines.append("")
-    lines.append("Concertinformatie is gebaseerd op Bandsintown: https://www.bandsintown.com/")
-    return "\n".join(lines)
-
-def send_email(subject, content):
-    smtp_user = os.environ.get("SMTP_USER")
-    smtp_password = os.environ.get("SMTP_PASSWORD")
-    mail_to = os.environ.get("MAIL_TO")
-
-    if not all([smtp_user, smtp_password, mail_to]):
-        raise Exception("SMTP_USER, SMTP_PASSWORD of MAIL_TO ontbreekt in de environment")
-
-    msg = EmailMessage()
-    msg["Subject"] = subject
-    msg["From"] = smtp_user
-    msg["To"] = mail_to
-    msg.set_content(content)
-
+def get_concerts(artist):
+    url = f"https://rest.bandsintown.com/artists/{requests.utils.quote(artist)}/events?app_id={BANDSINTOWN_APP_ID}"
     try:
-        with smtplib.SMTP("smtp.mailgun.org", 587) as smtp:
-            smtp.starttls()
-            smtp.login(smtp_user, smtp_password)
-            smtp.send_message(msg)
-            print("✅ E-mail verzonden!")
+        response = requests.get(url)
+        if response.status_code != 200:
+            return []
+        data = response.json()
+        return [
+            {
+                "artist": artist,
+                "venue": event["venue"]["name"],
+                "city": event["venue"]["city"],
+                "datetime": event["datetime"][:10],
+                "url": event.get("url", "")
+            }
+            for event in data if event["venue"]["country"] == "Netherlands"
+        ]
     except Exception as e:
-        print("❌ Fout bij verzenden e-mail:", e)
+        print(f"Fout bij ophalen concerten voor {artist}: {e}")
+        return []
 
-def main():
-    artists = get_artists()
-    content = format_email_content(artists)
-    send_email("🎶 Wekelijkse concertmail – Graadmeter", content)
+def format_email_content(concerts):
+    if not concerts:
+        return "Geen concerten gevonden in Nederland voor artiesten uit de Pinguin Graadmeter."
 
-if __name__ == "__main__":
-    main()
+    lines = ["🎸 Concertalert – Pinguin Graadmeter 🎶", ""]
+    for concert in con
