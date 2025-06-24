@@ -25,7 +25,7 @@ jobs:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
-          python generate_html.py
+          python generate_html1.py
 
       - name: Upload concerten HTML als artifact
         uses: actions/upload-artifact@v4
