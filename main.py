@@ -104,7 +104,7 @@ def send_email(subject, content):
         print("❌ Fout bij verzenden e-mail:", e)
 
 def main():
-    artists = get_artists()
+    artists = ["De Staat", "Chef'Special", "Froukje", "Claw Boys Claw"]
     all_concerts = []
     no_concert_artists = []
 
