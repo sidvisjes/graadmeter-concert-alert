@@ -17,12 +17,12 @@ def get_artists():
         artists = [a.text.strip() for a in artist_elements if a.text.strip()]
         if not artists:
             print("⚠️ Geen artiesten gevonden via scraping, gebruik fallback.")
-            return ["S10", "Froukje", "De Staat", "Chef'Special"]
+            return ["S10", "Froukje", "De Staat", "Chef'Special", "Claw Boys Claw"]
         print(f"🎤 Artiesten van de graadmeter: {artists}")
         return list(set(artists))
     except Exception as e:
         print(f"❌ Fout bij ophalen artiestenpagina: {e}")
-        return ["S10", "Froukje", "De Staat", "Chef'Special"]
+        return ["S10", "Froukje", "De Staat", "Chef'Special", "Claw Boys Claw"]
 
 def search_artist_official_name(artist_name):
     url = f"https://rest.bandsintown.com/search/artists?query={quote(artist_name)}&app_id={BANDSINTOWN_APP_ID}"
