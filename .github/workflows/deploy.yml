@@ -1,0 +1,26 @@
+name: Deploy graadmeter site
+
+on:
+  push:
+    branches:
+      - main    # Of je hoofdtak
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Run script to generate HTML
+        run: |
+          python generate_html.py
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./  # de map waar het HTML-bestand staat
+          publish_branch: gh-pages
+          # Alleen de HTML moet in de root van gh-pages, dus zorg dat je script 'graadmeter_artists.html' hier staat
+
