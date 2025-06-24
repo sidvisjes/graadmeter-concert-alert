@@ -1,18 +1,19 @@
-name: Genereer concerten-widget
+name: Genereer concert HTML
 
 on:
-  schedule:
-    - cron: "0 8 * * 1"  # elke maandag om 08:00
   workflow_dispatch:
+  schedule:
+    - cron: '0 8 * * 2'  # Elke dinsdag om 8:00 CET
 
 jobs:
-  generate:
+  build:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Python
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
@@ -20,15 +21,17 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
-      - name: Genereer concerten HTML
+      - name: Run script
+        run: python generate_html.py
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
-        run: |
-          python generate_html.py
 
-      - name: Upload concerten HTML als artifact
-        uses: actions/upload-artifact@v4
+      - name: Deploy naar gh-pages
+        uses: peaceiris/actions-gh-pages@v3
         with:
-          name: concerten_graadmeter
-          path: concerten_graadmeter.html
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
+          publish_branch: gh-pages
+          destination_dir: .
+          keep_files: true
