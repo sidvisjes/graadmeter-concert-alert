@@ -17,7 +17,6 @@ def get_artists():
     return list(set(artists))
 
 def search_artist_official_name(artist_name):
-    """Zoek artiest via Bandsintown zoek-API en pak eerste resultaat."""
     url = f"https://rest.bandsintown.com/search/artists?query={quote(artist_name)}&app_id={BANDSINTOWN_APP_ID}"
     try:
         response = requests.get(url, timeout=10)
@@ -35,7 +34,7 @@ def search_artist_official_name(artist_name):
         print(f"❌ Exception bij zoeken artiest {artist_name}: {e}")
         return None
 
-def get_concerts(artist_name):
+def get_concerts(artist_name, label_artist=None):
     url = f"https://rest.bandsintown.com/artists/{quote(artist_name)}/events?app_id={BANDSINTOWN_APP_ID}"
     try:
         response = requests.get(url, timeout=10)
@@ -47,6 +46,8 @@ def get_concerts(artist_name):
             print(f"⚠️ Geen events voor: {artist_name}")
             return []
         filtered = [e for e in data if e.get("venue") and e["venue"].get("country") == "Netherlands"]
+        for e in filtered:
+            e["artist"] = label_artist or artist_name
         if not filtered:
             print(f"⚠️ Geen events in Nederland voor: {artist_name}")
         else:
@@ -104,21 +105,14 @@ def main():
     for artist in artists:
         concerts = get_concerts(artist)
         if not concerts:
-            # fallback zoeken
             official_name = search_artist_official_name(artist)
             if official_name and official_name != artist:
-                concerts = get_concerts(official_name)
-                if concerts:
-                    for c in concerts:
-                        c["artist"] = official_name
-                    all_concerts.extend(concerts)
-                else:
-                    no_concert_artists.append(artist)
+                concerts = get_concerts(official_name, label_artist=official_name)
+            if concerts:
+                all_concerts.extend(concerts)
             else:
                 no_concert_artists.append(artist)
         else:
-            for c in concerts:
-                c["artist"] = artist
             all_concerts.extend(concerts)
 
     print(f"🎉 Totaal concerten in NL gevonden: {len(all_concerts)}")
