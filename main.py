@@ -9,12 +9,20 @@ BANDSINTOWN_APP_ID = "graadmeter-concert-alert"
 
 def get_artists():
     url = "https://pinguinradio.com/graadmeter"
-    response = requests.get(url, timeout=10)
-    soup = BeautifulSoup(response.text, "html.parser")
-    artist_elements = soup.select(".field-content a")
-    artists = [a.text.strip() for a in artist_elements if a.text.strip()]
-    print(f"🎤 Artiesten van de graadmeter: {artists}")
-    return list(set(artists))
+    headers = {"User-Agent": "Mozilla/5.0"}
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        soup = BeautifulSoup(response.text, "html.parser")
+        artist_elements = soup.select(".field-content a")
+        artists = [a.text.strip() for a in artist_elements if a.text.strip()]
+        if not artists:
+            print("⚠️ Geen artiesten gevonden via scraping, gebruik fallback.")
+            return ["S10", "Froukje", "De Staat", "Chef'Special"]
+        print(f"🎤 Artiesten van de graadmeter: {artists}")
+        return list(set(artists))
+    except Exception as e:
+        print(f"❌ Fout bij ophalen artiestenpagina: {e}")
+        return ["S10", "Froukje", "De Staat", "Chef'Special"]
 
 def search_artist_official_name(artist_name):
     url = f"https://rest.bandsintown.com/search/artists?query={quote(artist_name)}&app_id={BANDSINTOWN_APP_ID}"
@@ -49,4 +57,43 @@ def get_concerts(artist_name, label_artist=None):
         print(f"📦 {len(data)} events gevonden voor {artist_name}")
         filtered = []
         for e in data:
-            venue = e.get("
+            venue = e.get("venue", {})
+            country = venue.get("country", "").lower()
+            if "nether" in country or country == "nl":
+                e["artist"] = label_artist or artist_name
+                filtered.append(e)
+                print(f"✅ {artist_name} – {venue.get('name')} in {venue.get('city')}, {venue.get('country')}")
+
+        if not filtered:
+            print(f"⚠️ Geen NL concerten voor {artist_name}")
+        return filtered
+    except Exception as e:
+        print(f"❌ Exception bij ophalen concerten voor {artist_name}: {e}")
+        return []
+
+def format_email_content(all_concerts, no_concert_artists):
+    lines = ["🎸 Concertalert – Pinguin Graadmeter 🎶", ""]
+
+    if all_concerts:
+        for concert in all_concerts:
+            venue = concert.get("venue", {})
+            date = concert.get("datetime", "")[:10]
+            link = concert.get("url", "")
+            lines.append(f"- {concert['artist']} – {venue.get('name', '')}, {venue.get('city', '')} op {date} ({link})")
+    else:
+        lines.append("Geen concerten gevonden in Nederland voor artiesten uit de Pinguin Graadmeter.")
+
+    if no_concert_artists:
+        lines.append("\n⚠️ Artiesten zonder concerten in Nederland:")
+        for artist in no_concert_artists:
+            lines.append(f"- {artist}")
+
+    return "\n".join(lines)
+
+def send_email(subject, content):
+    smtp_user = os.environ.get("SMTP_USER")
+    smtp_password = os.environ.get("SMTP_PASSWORD")
+    mail_to = os.environ.get("MAIL_TO")
+
+    if not all([smtp_user, smtp_password, mail_to]):
+        raise Exception
