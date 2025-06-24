@@ -18,10 +18,15 @@ def get_spotify_token():
     return response.json()["access_token"]
 
 def get_artists_from_playlist(token):
-    playlist_id = "37i9dQZF1DX2WkIBRaChxW"  # Pinguin Graadmeter
+    playlist_id = "3x5cph0HOhJXp7ZGd0nCDx"  # Pinguin Graadmeter
     url = f"https://api.spotify.com/v1/playlists/{playlist_id}/tracks"
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(url, headers=headers)
+data = response.json()
+print("🎧 Spotify Playlist Response:", data)
+if "items" not in data:
+    raise Exception("❌ Kan 'items' niet vinden in de Spotify-response. Check of de playlist-ID correct is en of de token werkt.")
+items = data["items"]
     items = response.json()["items"]
     artist_names = set()
     for item in items:
