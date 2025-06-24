@@ -11,10 +11,11 @@ def get_artists():
     url = "https://pinguinradio.com/graadmeter"
     response = requests.get(url, timeout=10)
     soup = BeautifulSoup(response.text, "html.parser")
-    artist_elements = soup.select(".field-content a")
-    artists = [a.text.strip() for a in artist_elements if a.text.strip()]
+    artist_elements = soup.select(".chart-list__artist")
+    artists = [el.text.strip() for el in artist_elements if el.text.strip()]
     print(f"🎤 Artiesten van de graadmeter: {artists}")
     return list(set(artists))
+
 
 def search_artist_official_name(artist_name):
     """Zoek artiest via Bandsintown zoek-API en pak eerste resultaat."""
