@@ -42,10 +42,14 @@ def get_concerts(artist_name, label_artist=None):
             print(f"❌ Fout bij ophalen concerten voor {artist_name}: status {response.status_code}")
             return []
         data = response.json()
+        print(f"📦 Concertdata voor {artist_name}: {data}")
         if not data or (isinstance(data, dict) and data.get("error")):
             print(f"⚠️ Geen events voor: {artist_name}")
             return []
-        filtered = [e for e in data if e.get("venue") and e["venue"].get("country") == "Netherlands"]
+        filtered = [
+            e for e in data
+            if e.get("venue") and e["venue"].get("country", "").lower() in ["netherlands", "nl"]
+        ]
         for e in filtered:
             e["artist"] = label_artist or artist_name
         if not filtered:
@@ -63,12 +67,14 @@ def format_email_content(all_concerts, no_concert_artists):
     if all_concerts:
         for concert in all_concerts:
             venue = concert.get("venue", {})
-            lines.append(f"- {concert['artist']} – {venue.get('name', '')}, {venue.get('city', '')} op {concert['datetime'][:10]} ({concert.get('url', '')})")
+            lines.append(
+                f"- {concert['artist']} – {venue.get('name', '')}, {venue.get('city', '')} op {concert['datetime'][:10]} ({concert.get('url', '')})"
+            )
     else:
         lines.append("Geen concerten gevonden in Nederland voor artiesten uit de Pinguin Graadmeter.")
 
     if no_concert_artists:
-        lines.append("\n⚠️ Artiesten zonder concerten in Nederland deze week:")
+        lines.append("\n⚠️ Artiesten zonder concerten in Nederland:")
         for artist in no_concert_artists:
             lines.append(f"- {artist}")
 
@@ -115,8 +121,9 @@ def main():
         else:
             all_concerts.extend(concerts)
 
-    print(f"🎉 Totaal concerten in NL gevonden: {len(all_concerts)}")
-    print(f"⚠️ Artiesten zonder concerten: {no_concert_artists}")
+    print(f"📨 Concerten in de mail: {all_concerts}")
+    print(f"🎉 Totaal concerten gevonden: {len(all_concerts)}")
+    print(f"⚠️ Artiesten zonder events: {no_concert_artists}")
 
     content = format_email_content(all_concerts, no_concert_artists)
     send_email("🎶 Wekelijkse concertmail – Graadmeter", content)
