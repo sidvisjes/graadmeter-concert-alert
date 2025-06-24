@@ -1,4 +1,11 @@
 import os
+
+# DEBUG: Check if Spotify secrets are set
+print("⚙️ Debug info:")
+print("SPOTIFY_CLIENT_ID set:", bool(os.environ.get("SPOTIFY_CLIENT_ID")))
+print("SPOTIFY_CLIENT_SECRET set:", bool(os.environ.get("SPOTIFY_CLIENT_SECRET")))
+print("---")
+
 import requests
 
 SPOTIFY_CLIENT_ID = os.getenv("SPOTIFY_CLIENT_ID")
