@@ -1,0 +1,34 @@
+name: Genereer concerten-widget
+
+on:
+  schedule:
+    - cron: "0 8 * * 1"  # elke maandag om 08:00
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install requests
+
+      - name: Genereer concerten HTML
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        run: |
+          python generate_html.py
+
+      - name: Upload concerten HTML als artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: concerten_graadmeter
+          path: concerten_graadmeter.html
