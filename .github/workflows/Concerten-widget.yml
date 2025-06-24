@@ -1,16 +1,19 @@
-name: Genereer concert HTML
+name: Genereer concert HTML en publiceer
 
 on:
-  workflow_dispatch:
   schedule:
-    - cron: '0 8 * * 2'  # Elke dinsdag om 8:00 CET
+    - cron: '0 8 * * 0'  # Zondag 10:00 NL tijd (8:00 UTC)
+  workflow_dispatch:      # Voor handmatig starten
+
+permissions:
+  contents: write         # Nodig om naar gh-pages te kunnen pushen
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
       - name: Set up Python
@@ -22,16 +25,15 @@ jobs:
         run: pip install requests
 
       - name: Run script
-        run: python generate_html.py
         env:
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+        run: python generate_html.py
 
-      - name: Deploy naar gh-pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./
-          publish_branch: gh-pages
-          destination_dir: .
-          keep_files: true
+      - name: Create .nojekyll file (optional)
+        run: touch .nojekyll
+
+      - name: Copy HTML to root for GitHub Pages
+        run: |
+          mkdir public
+          mv concerten_g_
