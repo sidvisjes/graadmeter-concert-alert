@@ -96,4 +96,32 @@ def send_email(subject, content):
     mail_to = os.environ.get("MAIL_TO")
 
     if not all([smtp_user, smtp_password, mail_to]):
-        raise Exception
+        raise Exception("SMTP configuratie ontbreekt")
+
+    msg = EmailMessage()
+    msg["Subject"] = subject
+    msg["From"] = smtp_user
+    msg["To"] = mail_to
+    msg.set_content(content)
+
+    with smtplib.SMTP_SSL("smtp.gmail.com", 465) as smtp:
+        smtp.login(smtp_user, smtp_password)
+        smtp.send_message(msg)
+
+# === MAIN FLOW ===
+if __name__ == "__main__":
+    artists = get_artists()
+    all_concerts = []
+    no_concert_artists = []
+
+    for artist in artists:
+        official = search_artist_official_name(artist) or artist
+        concerts = get_concerts(official, label_artist=artist)
+        if concerts:
+            all_concerts.extend(concerts)
+        else:
+            no_concert_artists.append(artist)
+
+    email_content = format_email_content(all_concerts, no_concert_artists)
+    print("\n📧 E-mailinhoud:\n", email_content)
+    send_email("🎶 Concertalert – Pinguin Graadmeter", email_content)
