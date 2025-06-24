@@ -11,45 +11,44 @@ def get_spotify_token():
     data = {"grant_type": "client_credentials"}
     response = requests.post(url, headers=headers, data=data,
                              auth=(SPOTIFY_CLIENT_ID, SPOTIFY_CLIENT_SECRET))
-    if response.status_code != 200:
-        raise Exception(f"❌ Kon geen token ophalen. Status: {response.status_code}, Antwoord: {response.text}")
+    response.raise_for_status()
     return response.json()["access_token"]
 
 def get_artists_from_playlist(token):
     url = f"https://api.spotify.com/v1/playlists/{PLAYLIST_ID}/tracks"
     headers = {"Authorization": f"Bearer {token}"}
     response = requests.get(url, headers=headers)
-
-    try:
-        data = response.json()
-    except Exception as e:
-        print("❌ Kan geen JSON parseren:", e)
-        print("Statuscode:", response.status_code)
-        print("Response tekst:", response.text)
-        raise
-
-    # 🔍 Debug: toon volledige JSON response
-    print("📦 Volledige response JSON:")
-    print(data)
+    response.raise_for_status()
+    data = response.json()
 
     if "items" not in data:
-        raise Exception("❌ Kan 'items' niet vinden in de Spotify-response. Is de playlist-ID correct?")
+        raise Exception("❌ Kan 'items' niet vinden in de Spotify-response.")
 
-    items = data["items"]
     artists = set()
-
-    for item in items:
+    for item in data["items"]:
         track = item.get("track")
         if track and "artists" in track:
             for artist in track["artists"]:
                 artists.add(artist["name"])
-
     return sorted(artists)
+
+def generate_html(artists):
+    html = "<html><head><title>Graadmeter Artiesten</title></head><body>"
+    html += "<h1>🎶 Artiesten uit de Graadmeter Playlist</h1><ul>"
+    for artist in artists:
+        html += f"<li>{artist}</li>"
+    html += "</ul></body></html>"
+    return html
 
 def main():
     token = get_spotify_token()
     artists = get_artists_from_playlist(token)
-    print(f"🎤 Artiesten in de playlist: {artists}")
+    html = generate_html(artists)
+
+    with open("graadmeter_artists.html", "w", encoding="utf-8") as f:
+        f.write(html)
+
+    print("✅ HTML-bestand succesvol aangemaakt: graadmeter_artists.html")
 
 if __name__ == "__main__":
     main()
